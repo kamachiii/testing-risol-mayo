@@ -2,3 +2,4 @@
 - tes push
 - init project
 - wip
+- coba pull
