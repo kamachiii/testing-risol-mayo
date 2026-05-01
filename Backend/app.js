@@ -6,7 +6,7 @@ const app = express();
 
 app.use(express.json());
 app.use("/api", apiRoutes);
-app.use("/public/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use((err, req, res, next) => {
   if (err) {
     return res.status(400).json({

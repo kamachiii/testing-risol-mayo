@@ -257,7 +257,7 @@ const uploadPaymentProof = (req, res) => {
       return res.status(403).json({ status: "error", message: "Tidak boleh upload bukti bayar untuk order ini", data: null });
     }
 
-    const filePath = `/public/uploads/payment_proofs/${req.file.filename}`;
+    const filePath = `/uploads/payment_proofs/${req.file.filename}`;
 
     OrderModel.updatePaymentProof(orderId, filePath, (err2) => {
       if (err2) {
