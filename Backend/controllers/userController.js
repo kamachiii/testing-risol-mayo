@@ -5,9 +5,19 @@ const getAllUsers = (req, res) => {
   db.query("SELECT id, name, email FROM users", (err, results) => {
     if (err) {
       console.error("DB error on getAllUsers:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
-    res.json(results);
+
+    res.json({
+      success: true,
+      message: "Berhasil mengambil data users",
+      total: results.length,
+      data: results,
+    });
   });
 };
 
@@ -16,30 +26,62 @@ const createUser = (req, res) => {
   const { name, email, password } = req.body;
 
   const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
   db.query(sql, [name, email, password], (err, result) => {
     if (err) {
       console.error("DB error on createUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
-    res.json({ message: "User berhasil ditambahkan" });
+
+    res.status(201).json({
+      success: true,
+      message: "User berhasil ditambahkan",
+      user: {
+        id: result.insertId,
+        name: name,
+        email: email,
+      },
+    });
   });
 };
 
 // PUT update user
 const updateUser = (req, res) => {
   const { id } = req.params;
-  const { name, email, } = req.body;
+  const { name, email } = req.body;
 
   const sql = "UPDATE users SET name=?, email=? WHERE id=?";
+
   db.query(sql, [name, email, id], (err, result) => {
     if (err) {
       console.error("DB error on updateUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
+
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
     }
-    res.json({ message: `User ${id} berhasil diupdate` });
+
+    res.json({
+      success: true,
+      message: "User berhasil diupdate",
+      user: {
+        id: id,
+        name: name,
+        email: email,
+      },
+    });
   });
 };
 
@@ -47,16 +89,51 @@ const updateUser = (req, res) => {
 const deleteUser = (req, res) => {
   const { id } = req.params;
 
-  const sql = "DELETE FROM users WHERE id=?";
-  db.query(sql, [id], (err, result) => {
+  // ambil data user dulu
+  const getUserSql = "SELECT id, name, email FROM users WHERE id=?";
+
+  db.query(getUserSql, [id], (err, userResult) => {
     if (err) {
-      console.error("DB error on deleteUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+      console.error("DB error on get user:", err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
     }
-    res.json({ message: `User ${id} berhasil dihapus` });
+
+    const user = userResult[0];
+
+    // hapus user
+    const deleteSql = "DELETE FROM users WHERE id=?";
+
+    db.query(deleteSql, [id], (err, result) => {
+      if (err) {
+        console.error("DB error on deleteUser:", err);
+
+        return res.status(500).json({
+          success: false,
+          message: "Terjadi kesalahan pada server",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "User berhasil dihapus",
+        deletedUser: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+    });
   });
 };
 
