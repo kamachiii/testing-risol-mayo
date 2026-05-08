@@ -5,12 +5,18 @@ const getAllUsers = (req, res) => {
   db.query("SELECT id, name, email FROM users", (err, results) => {
     if (err) {
       console.error("DB error on getAllUsers:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
 
     res.json({
-      message: "Data user berhasil diambil",
-      users: results
+      success: true,
+      message: "Berhasil mengambil data users",
+      total: results.length,
+      data: results,
     });
   });
 };
@@ -20,19 +26,25 @@ const createUser = (req, res) => {
   const { name, email, password } = req.body;
 
   const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
   db.query(sql, [name, email, password], (err, result) => {
     if (err) {
       console.error("DB error on createUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
 
-    res.json({
+    res.status(201).json({
+      success: true,
       message: "User berhasil ditambahkan",
       user: {
         id: result.insertId,
-        name,
-        email
-      }
+        name: name,
+        email: email,
+      },
     });
   });
 };
@@ -43,23 +55,32 @@ const updateUser = (req, res) => {
   const { name, email } = req.body;
 
   const sql = "UPDATE users SET name=?, email=? WHERE id=?";
+
   db.query(sql, [name, email, id], (err, result) => {
     if (err) {
       console.error("DB error on updateUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
     }
 
     res.json({
+      success: true,
       message: "User berhasil diupdate",
       user: {
-        id,
-        name,
-        email
-      }
+        id: id,
+        name: name,
+        email: email,
+      },
     });
   });
 };
@@ -68,36 +89,52 @@ const updateUser = (req, res) => {
 const deleteUser = (req, res) => {
   const { id } = req.params;
 
-  // ambil data dulu sebelum dihapus
-  db.query("SELECT * FROM users WHERE id=?", [id], (err, rows) => {
+  // ambil data user dulu
+  const getUserSql = "SELECT id, name, email FROM users WHERE id=?";
+
+  db.query(getUserSql, [id], (err, userResult) => {
     if (err) {
-      console.error("DB error on deleteUser:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+      console.error("DB error on get user:", err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+      });
     }
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
     }
 
-    const deletedUser = rows[0];
+    const user = userResult[0];
 
-    db.query("DELETE FROM users WHERE id=?", [id], (err2, result) => {
-      if (err2) {
-        console.error("DB error on deleteUser:", err2);
-        return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+    // hapus user
+    const deleteSql = "DELETE FROM users WHERE id=?";
+
+    db.query(deleteSql, [id], (err, result) => {
+      if (err) {
+        console.error("DB error on deleteUser:", err);
+
+        return res.status(500).json({
+          success: false,
+          message: "Terjadi kesalahan pada server",
+        });
       }
 
       res.json({
+        success: true,
         message: "User berhasil dihapus",
-        user: {
-          id: deletedUser.id,
-          name: deletedUser.name,
-          email: deletedUser.email
-        }
+        deletedUser: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
       });
     });
   });
 };
 
 module.exports = { getAllUsers, createUser, updateUser, deleteUser };
-
