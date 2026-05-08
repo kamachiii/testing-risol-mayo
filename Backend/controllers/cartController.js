@@ -2,7 +2,7 @@ const db = require("../config/database");
 
 // 1. GET: Melihat isi keranjang
 const getCart = (req, res) => {
-  const userId = req.user.id; // Diambil dari token JWT (decoded.id)
+  const userId = req.user.id; // Diambil dari token JWT
 
   const sql = `
     SELECT 
@@ -48,8 +48,9 @@ const addItem = (req, res) => {
   const { product_id, quantity } = req.body;
 
   // Input validation
-  if (!product_id) {
-    return res.status(400).json({ message: "product_id diperlukan" });
+  const pid = parseInt(product_id, 10);
+  if (!product_id || isNaN(pid) || pid <= 0) {
+    return res.status(400).json({ message: "product_id harus berupa angka positif" });
   }
   if (quantity === undefined || quantity === null) {
     return res.status(400).json({ message: "quantity diperlukan" });
@@ -70,7 +71,7 @@ const addItem = (req, res) => {
     ON DUPLICATE KEY UPDATE quantity = quantity + ?
   `;
 
-  db.query(sql, [userId, product_id, qty, qty], (err, result) => {
+  db.query(sql, [userId, pid, qty, qty], (err, result) => {
     if (err) {
       console.error("DB error on addItem:", err);
       return res
@@ -100,7 +101,6 @@ const updateItem = (req, res) => {
       .json({ message: "quantity harus berupa angka positif" });
   }
 
-  // Scope by user_id to prevent users from updating another user's cart item
   const sql = "UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?";
   db.query(sql, [qty, id, userId], (err, result) => {
     if (err) {
@@ -108,9 +108,7 @@ const updateItem = (req, res) => {
       return res.status(500).json({ message: "Gagal memperbarui jumlah" });
     }
     if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "Item tidak ditemukan atau bukan milik Anda" });
+      return res.status(404).json({ message: "Item keranjang tidak ditemukan" });
     }
     res.json({ status: "success", message: "Jumlah berhasil diperbarui" });
   });
@@ -121,17 +119,19 @@ const deleteItem = (req, res) => {
   const userId = req.user.id;
   const { id } = req.params;
 
-  // Scope by user_id to prevent users from deleting another user's cart item
   const sql = "DELETE FROM cart_items WHERE id = ? AND user_id = ?";
   db.query(sql, [id, userId], (err, result) => {
     if (err) {
       console.error("DB error on deleteItem:", err);
       return res.status(500).json({ message: "Gagal menghapus item" });
     }
+
     if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "Item tidak ditemukan atau bukan milik Anda" });
+      return res.status(404).json({ message: "Item keranjang tidak ditemukan" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Item tidak ditemukan atau tidak diizinkan" });
     }
     res.json({ status: "success", message: "Item dihapus dari keranjang" });
   });

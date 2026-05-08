@@ -37,7 +37,7 @@ const login = (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+    const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, SECRET_KEY, {
       expiresIn: "1h",
     });
 
@@ -83,6 +83,7 @@ const register = async (req, res) => {
         },
       });
     });
+
   } catch (error) {
     console.error("Register error:", error);
 
