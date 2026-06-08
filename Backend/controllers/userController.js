@@ -1,86 +1,77 @@
 const db = require("../config/database");
+const bcrypt = require("bcryptjs");
 
 // GET all users
 const getAllUsers = (req, res) => {
-  db.query("SELECT id, name, email FROM users", (err, results) => {
+  const sql = "SELECT id, name, email, role, created_at FROM users ORDER BY id DESC";
+  db.query(sql, (err, results) => {
     if (err) {
       console.error("DB error on getAllUsers:", err);
-
-      return res.status(500).json({
-        success: false,
-        message: "Terjadi kesalahan pada server",
-      });
+      return res.status(500).json({ status: "error", message: "Terjadi kesalahan pada server", data: null });
     }
-
-    res.json({
-      success: true,
-      message: "Berhasil mengambil data users",
-      total: results.length,
-      data: results,
-    });
+    res.json({ status: "success", message: "Berhasil mengambil data user", data: results });
   });
 };
 
-// POST create user
+// CREATE user
 const createUser = (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ status: "error", message: "Nama, email, dan password wajib diisi", data: null });
+  }
 
-  const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-
-  db.query(sql, [name, email, password], (err, result) => {
+  const checkSql = "SELECT id FROM users WHERE email = ?";
+  db.query(checkSql, [email], async (err, existing) => {
     if (err) {
-      console.error("DB error on createUser:", err);
-
-      return res.status(500).json({
-        success: false,
-        message: "Terjadi kesalahan pada server",
-      });
+      console.error("DB error on check email:", err);
+      return res.status(500).json({ status: "error", message: "Terjadi kesalahan pada server", data: null });
+    }
+    if (existing.length > 0) {
+      return res.status(400).json({ status: "error", message: "Email sudah terdaftar", data: null });
     }
 
-    res.status(201).json({
-      success: true,
-      message: "User berhasil ditambahkan",
-      user: {
-        id: result.insertId,
-        name: name,
-        email: email,
-      },
-    });
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const insertSql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+      db.query(insertSql, [name, email, hashedPassword, role || "customer"], (err2, result) => {
+        if (err2) {
+          console.error("DB error on createUser:", err2);
+          return res.status(500).json({ status: "error", message: "Gagal membuat user", data: null });
+        }
+        res.status(201).json({
+          status: "success",
+          message: "User berhasil dibuat",
+          data: { id: result.insertId, name, email, role: role || "customer" },
+        });
+      });
+    } catch (e) {
+      return res.status(500).json({ status: "error", message: "Gagal hash password", data: null });
+    }
   });
 };
 
-// PUT update user
+// UPDATE user
 const updateUser = (req, res) => {
   const { id } = req.params;
-  const { name, email } = req.body;
+  const { name, email, role } = req.body;
 
-  const sql = "UPDATE users SET name=?, email=? WHERE id=?";
-
-  db.query(sql, [name, email, id], (err, result) => {
+  const getUserSql = "SELECT id FROM users WHERE id=?";
+  db.query(getUserSql, [id], (err, userResult) => {
     if (err) {
-      console.error("DB error on updateUser:", err);
-
-      return res.status(500).json({
-        success: false,
-        message: "Terjadi kesalahan pada server",
-      });
+      console.error("DB error on get user:", err);
+      return res.status(500).json({ status: "error", message: "Terjadi kesalahan pada server", data: null });
+    }
+    if (!userResult || userResult.length === 0) {
+      return res.status(404).json({ status: "error", message: "User tidak ditemukan", data: null });
     }
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "User berhasil diupdate",
-      user: {
-        id: id,
-        name: name,
-        email: email,
-      },
+    const updateSql = "UPDATE users SET name=?, email=?, role=? WHERE id=?";
+    db.query(updateSql, [name, email, role || "customer", id], (err2) => {
+      if (err2) {
+        console.error("DB error on updateUser:", err2);
+        return res.status(500).json({ status: "error", message: "Gagal update user", data: null });
+      }
+      res.json({ status: "success", message: "User berhasil diupdate", data: null });
     });
   });
 };
@@ -89,51 +80,48 @@ const updateUser = (req, res) => {
 const deleteUser = (req, res) => {
   const { id } = req.params;
 
-  // ambil data user dulu
-  const getUserSql = "SELECT id, name, email FROM users WHERE id=?";
+  // Prevent self-deletion
+  if (Number(id) === req.user.id) {
+    return res.status(400).json({
+      status: "error",
+      message: "Tidak bisa menghapus akun sendiri",
+      data: null,
+    });
+  }
 
+  const getUserSql = "SELECT id, name, email, role FROM users WHERE id=?";
   db.query(getUserSql, [id], (err, userResult) => {
     if (err) {
       console.error("DB error on get user:", err);
-
-      return res.status(500).json({
-        success: false,
-        message: "Terjadi kesalahan pada server",
-      });
+      return res.status(500).json({ status: "error", message: "Terjadi kesalahan pada server", data: null });
+    }
+    if (!userResult || userResult.length === 0) {
+      return res.status(404).json({ status: "error", message: "User tidak ditemukan", data: null });
     }
 
-    if (userResult.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
+    const proceedDelete = () => {
+      const deleteSql = "DELETE FROM users WHERE id=?";
+      db.query(deleteSql, [id], (err2) => {
+        if (err2) {
+          console.error("DB error on deleteUser:", err2);
+          return res.status(500).json({ status: "error", message: "Gagal menghapus user", data: null });
+        }
+        res.json({ status: "success", message: "User berhasil dihapus", data: null });
       });
+    };
+
+    // If target is admin, check not last admin
+    if (userResult[0].role === "admin") {
+      const countSql = "SELECT COUNT(*) as cnt FROM users WHERE role='admin'";
+      db.query(countSql, (err2, countResult) => {
+        if (!err2 && countResult[0].cnt <= 1) {
+          return res.status(400).json({ status: "error", message: "Tidak bisa menghapus admin terakhir", data: null });
+        }
+        proceedDelete();
+      });
+    } else {
+      proceedDelete();
     }
-
-    const user = userResult[0];
-
-    // hapus user
-    const deleteSql = "DELETE FROM users WHERE id=?";
-
-    db.query(deleteSql, [id], (err, result) => {
-      if (err) {
-        console.error("DB error on deleteUser:", err);
-
-        return res.status(500).json({
-          success: false,
-          message: "Terjadi kesalahan pada server",
-        });
-      }
-
-      res.json({
-        success: true,
-        message: "User berhasil dihapus",
-        deletedUser: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-      });
-    });
   });
 };
 
