@@ -1,2 +1,3 @@
 - init
 - tes push
+- init project
