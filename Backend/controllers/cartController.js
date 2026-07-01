@@ -10,6 +10,8 @@ const getCart = (req, res) => {
       p.id AS product_id,
       p.name AS product_name,
       p.price AS unit_price,
+      p.image_url,
+      p.stock,
       c.quantity,
       (p.price * c.quantity) AS subtotal
     FROM 
@@ -23,7 +25,7 @@ const getCart = (req, res) => {
   db.query(sql, [userId], (err, results) => {
     if (err) {
       console.error("DB error on getCart:", err);
-      return res.status(500).json({ message: "Terjadi kesalahan pada server" });
+      return res.status(500).json({ status: "error", message: "Terjadi kesalahan pada server", data: null });
     }
 
     const grandTotal = parseFloat(
@@ -50,37 +52,50 @@ const addItem = (req, res) => {
   // Input validation
   const pid = parseInt(product_id, 10);
   if (!product_id || isNaN(pid) || pid <= 0) {
-    return res.status(400).json({ message: "product_id harus berupa angka positif" });
+    return res.status(400).json({ status: "error", message: "product_id harus berupa angka positif", data: null });
   }
   if (quantity === undefined || quantity === null) {
-    return res.status(400).json({ message: "quantity diperlukan" });
+      return res.status(400).json({ status: "error", message: "quantity diperlukan", data: null });
   }
   const qty = parseInt(quantity, 10);
   if (isNaN(qty) || qty <= 0) {
     return res
-      .status(400)
-      .json({ message: "quantity harus berupa angka positif" });
+          .status(400)
+          .json({ status: "error", message: "quantity harus berupa angka positif", data: null });
   }
 
-  // If a UNIQUE key on (user_id, product_id) exists, ON DUPLICATE KEY UPDATE
-  // will increment quantity. Without the unique key the row is simply inserted.
-  // Note: VALUES() is deprecated in MySQL 8.0.20+; pass the qty again as a parameter.
-  const sql = `
-    INSERT INTO cart_items (user_id, product_id, quantity) 
-    VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE quantity = quantity + ?
-  `;
-
-  db.query(sql, [userId, pid, qty, qty], (err, result) => {
+  // Check product exists
+  const checkProduct = "SELECT id, stock FROM products WHERE id = ?";
+  db.query(checkProduct, [pid], (err, prodResults) => {
     if (err) {
-      console.error("DB error on addItem:", err);
-      return res
-        .status(500)
-        .json({ message: "Gagal menambahkan ke keranjang" });
+      console.error("DB error checking product:", err);
+      return res.status(500).json({ status: "error", message: "Gagal menambahkan ke keranjang", data: null });
     }
-    res
-      .status(201)
-      .json({ status: "success", message: "Produk berhasil ditambahkan" });
+    if (prodResults.length === 0) {
+      return res.status(404).json({ status: "error", message: "Produk tidak ditemukan", data: null });
+    }
+    // Check existing quantity in cart
+    const existingSql = "SELECT COALESCE(quantity, 0) AS existing_qty FROM cart_items WHERE user_id = ? AND product_id = ?";
+    db.query(existingSql, [userId, pid], (err2, existingRows) => {
+      if (err2) {
+        console.error("DB error checking existing cart:", err2);
+        return res.status(500).json({ status: "error", message: "Gagal menambahkan ke keranjang", data: null });
+      }
+      const existingQty = existingRows.length > 0 ? existingRows[0].existing_qty : 0;
+      const totalQty = existingQty + qty;
+      if (totalQty > prodResults[0].stock) {
+        return res.status(400).json({ status: "error", message: "Stok tidak cukup (stok: " + prodResults[0].stock + ", di keranjang: " + existingQty + ", diminta: " + qty + ")", data: null });
+      }
+
+      const sql = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?";
+      db.query(sql, [userId, pid, qty, qty], (err, result) => {
+        if (err) {
+          console.error("DB error on addItem:", err);
+          return res.status(500).json({ status: "error", message: "Gagal menambahkan ke keranjang", data: null });
+        }
+        res.status(201).json({ status: "success", message: "Produk berhasil ditambahkan", data: null });
+      });
+    });
   });
 };
 
@@ -92,25 +107,35 @@ const updateItem = (req, res) => {
 
   // Input validation
   if (quantity === undefined || quantity === null) {
-    return res.status(400).json({ message: "quantity diperlukan" });
+      return res.status(400).json({ status: "error", message: "quantity diperlukan", data: null });
   }
   const qty = parseInt(quantity, 10);
   if (isNaN(qty) || qty <= 0) {
     return res
-      .status(400)
-      .json({ message: "quantity harus berupa angka positif" });
+          .status(400)
+          .json({ status: "error", message: "quantity harus berupa angka positif", data: null });
   }
 
-  const sql = "UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?";
-  db.query(sql, [qty, id, userId], (err, result) => {
-    if (err) {
-      console.error("DB error on updateItem:", err);
-      return res.status(500).json({ message: "Gagal memperbarui jumlah" });
+  // Check stock before update
+  const checkSql = "SELECT ci.id, p.stock FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.id = ? AND ci.user_id = ?";
+  db.query(checkSql, [id, userId], (errC, rows) => {
+    if (errC) {
+      return res.status(500).json({ status: "error", message: "Gagal memperbarui jumlah", data: null });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Item keranjang tidak ditemukan" });
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ status: "error", message: "Item keranjang tidak ditemukan", data: null });
     }
-    res.json({ status: "success", message: "Jumlah berhasil diperbarui" });
+    if (qty > rows[0].stock) {
+      return res.status(400).json({ status: "error", message: "Stok tidak cukup (stok: " + rows[0].stock + ")", data: null });
+    }
+    const sql = "UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?";
+    db.query(sql, [qty, id, userId], (err, result) => {
+      if (err) {
+        console.error("DB error on updateItem:", err);
+        return res.status(500).json({ status: "error", message: "Gagal memperbarui jumlah", data: null });
+      }
+      res.json({ status: "success", message: "Jumlah berhasil diperbarui", data: null });
+    });
   });
 };
 
@@ -123,17 +148,13 @@ const deleteItem = (req, res) => {
   db.query(sql, [id, userId], (err, result) => {
     if (err) {
       console.error("DB error on deleteItem:", err);
-      return res.status(500).json({ message: "Gagal menghapus item" });
+      return res.status(500).json({ status: "error", message: "Gagal menghapus item", data: null });
     }
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Item keranjang tidak ditemukan" });
+      return res.status(404).json({ status: "error", message: "Item tidak ditemukan atau tidak diizinkan", data: null });
     }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Item tidak ditemukan atau tidak diizinkan" });
-    }
-    res.json({ status: "success", message: "Item dihapus dari keranjang" });
+    res.json({ status: "success", message: "Item dihapus dari keranjang", data: null });
   });
 };
 

@@ -4,3 +4,5 @@
 - wip
 - coba pull
 - init
+- init
+- push
