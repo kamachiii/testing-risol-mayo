@@ -1,22 +1,30 @@
 const mysql = require('mysql2');
-// require('dotenv').config();
+require('dotenv').config();
 
-// const env = process.env;
+const env = process.env;
 
-// buat koneksi ke database MySQL
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'risol_mayo' 
+// Pool untuk support transactions (getConnection)
+const db = mysql.createPool({
+    host: env.DB_HOST || '127.0.0.1',
+    user: env.DB_USER || 'root',
+    password: env.DB_PASS || '',
+    database: env.DB_NAME || 'risol_mayo',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-db.connect((err) => {
+db.getConnection((err, conn) => {
     if (err) {
-        console.error('Error connecting to database:', err);
+        console.error('Error connecting to database:', err.message);
         return;
     }
-    console.log('Connected to database');
+    console.log('Connected to database (pool)');
+    conn.release();
+});
+
+db.on('error', (err) => {
+    console.error('Database pool error:', err.message);
 });
 
 module.exports = db;
