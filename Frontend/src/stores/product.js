@@ -17,8 +17,6 @@ export const useProductStore = defineStore('products', () => {
     6: 'Rokok',
   }
 
-
-
   const searchQuery = ref('')
   const currentPage = ref(1)
   const totalPages = ref(1)
@@ -54,38 +52,17 @@ export const useProductStore = defineStore('products', () => {
         currentPage.value = data.pagination.page
       }
     } catch (err) {
-      console.warn('Backend tidak tersedia, menggunakan data dummy:', err.message)
-      products.value = getMockProducts()
+      console.error('Gagal mengambil data produk:', err.message)
+      error.value = 'Gagal memuat produk. Pastikan server backend aktif.'
+      products.value = []
     } finally {
       loading.value = false
     }
   }
 
-  function getMockProducts() {
-    return [
-      { id: 101, name: 'Cheetos Jagung 68g', price: 8500, category: 'Snack & Cemilan', categoryIcon: '🍿', image_url: '/uploads/products/cheetos.jpg', stock: 50 },
-      { id: 102, name: 'Chuba Stick 60g', price: 7500, category: 'Snack & Cemilan', categoryIcon: '🍿', image_url: '/uploads/products/chuba.jpg', stock: 45 },
-      { id: 103, name: 'Taro Net 60g', price: 8000, category: 'Snack & Cemilan', categoryIcon: '🍿', image_url: '/uploads/products/taro.jpg', stock: 40 },
-      { id: 104, name: 'Lays Classic 68g', price: 9500, category: 'Snack & Cemilan', categoryIcon: '🍿', image_url: '/uploads/products/lays.jpg', stock: 35 },
-      { id: 105, name: 'Oreo Original 137g', price: 12000, category: 'Snack & Cemilan', categoryIcon: '🍿', image_url: '/uploads/products/oreo.jpg', stock: 60 },
-      { id: 201, name: 'Le Minerale 600ml', price: 4000, category: 'Minuman', categoryIcon: '🥤', image_url: '/uploads/products/le-minerale.jpg', stock: 100 },
-      { id: 202, name: 'Mizone 500ml', price: 6500, category: 'Minuman', categoryIcon: '🥤', image_url: '/uploads/products/mizone.jpg', stock: 80 },
-      { id: 203, name: 'Coca-Cola 390ml', price: 7000, category: 'Minuman', categoryIcon: '🥤', image_url: '/uploads/products/coca-cola.jpg', stock: 70 },
-      { id: 204, name: 'Teh Pucuk 350ml', price: 4500, category: 'Minuman', categoryIcon: '🥤', image_url: '/uploads/products/teh-pucuk.jpg', stock: 90 },
-      { id: 301, name: 'Indomie Goreng 85g', price: 3200, category: 'Makanan Instan', categoryIcon: '🍜', image_url: '/uploads/products/indomie-goreng.jpg', stock: 150 },
-      { id: 302, name: 'Indomie Soto 75g', price: 3200, category: 'Makanan Instan', categoryIcon: '🍜', image_url: '/uploads/products/indomie-soto.jpg', stock: 120 },
-      { id: 303, name: 'Pop Mie 75g', price: 5500, category: 'Makanan Instan', categoryIcon: '🍜', image_url: '/uploads/products/mie-sedaap.jpg', stock: 80 },
-      { id: 401, name: 'Bimoli 1L', price: 18000, category: 'Kebutuhan Dapur', categoryIcon: '🍳', image_url: '/uploads/products/minyak-bimoli.jpg', stock: 40 },
-      { id: 402, name: 'Gulaku 1kg', price: 15000, category: 'Kebutuhan Dapur', categoryIcon: '🍳', image_url: '/uploads/products/gula-pasir.jpg', stock: 60 },
-      { id: 501, name: 'Lifebuoy 250ml', price: 15000, category: 'Perlengkapan Mandi', categoryIcon: '🧴', image_url: '/uploads/products/lifebuoy.jpg', stock: 35 },
-      { id: 502, name: 'Pantene 160ml', price: 18000, category: 'Perlengkapan Mandi', categoryIcon: '🧴', image_url: '/uploads/products/clear.jpg', stock: 30 },
-    ]
-  }
-
   const categories = Object.entries(categoryMap).map(([id, name]) => ({
     id: Number(id),
     name,
-
   }))
 
   return {
