@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import api from '@/services/api'
+import api, { getImageUrl } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,7 +32,7 @@ onMounted(async () => {
         price: Number(data.data.price),
         category: data.data.category_name || 'Lainnya',
         description: data.data.description || '',
-        image_url: data.data.image_url,
+        image_url: getImageUrl(data.data.image_url),
         stock: data.data.stock ?? 0,
       }
     } else {

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '@/services/api'
+import api, { getImageUrl } from '@/services/api'
 
 export const useProductStore = defineStore('products', () => {
   const products = ref([])
@@ -43,7 +43,7 @@ export const useProductStore = defineStore('products', () => {
         category: p.category_name || 'Lainnya',
         category_name: p.category_name || 'Lainnya',
         description: p.description || '',
-        image_url: p.image_url?.startsWith('http') ? p.image_url : `${p.image_url}`,
+        image_url: getImageUrl(p.image_url),
         stock: p.stock ?? 0,
       }))
       if (data.pagination) {

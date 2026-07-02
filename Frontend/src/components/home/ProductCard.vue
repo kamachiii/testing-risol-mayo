@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { getImageUrl } from '@/services/api'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -48,7 +49,7 @@ const goToLogin = () => { showLoginModal.value = false; router.push('/login') }
     <!-- Image -->
     <div class="card-img-wrap" @click="router.push({ name: 'product-detail', params: { id: product.id } })">
       <img
-        :src="product.image_url || 'https://placehold.co/400x400/f5f5f4/a8a29e?text=Produk'"
+        :src="getImageUrl(product.image_url) || 'https://placehold.co/400x400/f5f5f4/a8a29e?text=Produk'"
         :alt="product.name"
         class="card-img"
         loading="lazy"

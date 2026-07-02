@@ -30,3 +30,14 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// Resolve relative image URLs to absolute backend URLs
+// Backend stores "/uploads/products/..." → frontend needs full URL
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const BACKEND_URL = API_BASE.replace(/\/api\/?$/, '') || ''
+
+export function getImageUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return BACKEND_URL + url
+}

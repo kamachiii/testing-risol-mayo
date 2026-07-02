@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import api from '@/services/api'
+import api, { getImageUrl } from '@/services/api'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -82,7 +82,7 @@ const openEdit = (p) => {
     stock: p.stock,
     category_id: p.category_id
   }
-  imagePreview.value = p.image_url ? `${p.image_url}` : ''
+  imagePreview.value = p.image_url ? getImageUrl(p.image_url) : ''
   formImage.value = null
   errorMsg.value = ''
   showModal.value = true
@@ -234,7 +234,7 @@ const fmtPrice = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
         <tbody>
           <tr v-for="p in paginatedProducts" :key="p.id">
             <td>
-              <img v-if="p.image_url" :src="`${p.image_url}`" class="thumb" :alt="p.name" />
+              <img v-if="p.image_url" :src="getImageUrl(p.image_url)" class="thumb" :alt="p.name" />
               <div v-else class="no-img">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               </div>

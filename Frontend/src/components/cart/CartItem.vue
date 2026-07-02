@@ -1,5 +1,6 @@
 <script setup>
 import { useCartStore } from '@/stores/cart'
+import { getImageUrl } from '@/services/api'
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -34,7 +35,7 @@ const removeItem = () => {
     <!-- Image -->
     <div class="item-img-wrap">
       <img
-        :src="item.image_url || 'https://placehold.co/120x120/f5f5f4/a8a29e?text=Produk'"
+        :src="getImageUrl(item.image_url) || 'https://placehold.co/120x120/f5f5f4/a8a29e?text=Produk'"
         :alt="item.name"
         class="item-img"
         loading="lazy"
