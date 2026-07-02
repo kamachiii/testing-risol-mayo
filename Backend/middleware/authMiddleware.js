@@ -1,35 +1,33 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET_KEY = process.env.JWT_SECRET || "hakim_secret";
+const SECRET_KEY = process.env.JWT_SECRET;
+if (!SECRET_KEY) { console.error("FATAL: JWT_SECRET not set in env"); process.exit(1); }
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
 
-  // cek token ada atau tidak
   if (!authHeader) {
     return res.status(401).json({
-      success: false,
+      status: "error",
       message: "Token diperlukan",
+      data: null,
     });
   }
 
-  // support Bearer token
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : authHeader;
 
-  jwt.verify(token, SECRET_KEY, (err, decoded) => {
-    // token invalid / expired
+  jwt.verify(token, SECRET_KEY, { algorithms: ["HS256"] }, (err, decoded) => {
     if (err) {
       return res.status(401).json({
-        success: false,
+        status: "error",
         message: "Token tidak valid atau expired",
+        data: null,
       });
     }
 
-    // simpan data user dari token
     req.user = decoded;
-
     next();
   });
 };

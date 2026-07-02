@@ -85,9 +85,9 @@ const getMyOrdersNested = (req, res) => {
     }
     const map = new Map();
     for (const r of rows) {
-      if (!map.has(r.id)) {
-        map.set(r.id, {
-          id: r.id,
+      if (!map.has(r.order_id)) {
+        map.set(r.order_id, {
+          id: r.order_id,
           status: r.status,
           total_amount: r.total_amount,
           shipping_address: r.shipping_address,
@@ -99,7 +99,7 @@ const getMyOrdersNested = (req, res) => {
         });
       }
       if (r.order_item_id) {
-        map.get(r.id).items.push({
+        map.get(r.order_id).items.push({
           product_name: r.product_name,
           image_url: r.product_image,
           quantity: r.quantity,
@@ -479,7 +479,8 @@ const uploadPaymentProof = (req, res) => {
       });
     }
 
-    const updateSql = "UPDATE orders SET payment_proof = ?, status = 'paid' WHERE id = ?";
+    // Only auto-set to "paid" if order is still pending
+    const updateSql = "UPDATE orders SET payment_proof = ?, status = IF(status = 'pending', 'paid', status) WHERE id = ?";
     db.query(updateSql, [paymentProofPath, orderId], (errUpdate) => {
       if (errUpdate) {
         console.error("Error updating payment proof:", errUpdate);

@@ -6,7 +6,7 @@ const OrderModel = {
     const sql = `
       SELECT o.id, o.status, o.total_amount, o.shipping_address,
              o.payment_proof, o.created_at,
-             u.name AS user_name, u.email
+             u.name AS user_name, u.email AS user_email
       FROM orders o
       JOIN users u ON o.user_id = u.id
       ORDER BY o.created_at DESC
@@ -70,10 +70,10 @@ getProductsForUpdate(conn, productIds, cb) {
     conn.query(sql, [productIds], cb);
   },
 
-  createOrder(conn, userId, totalAmount, shippingAddress, cb) {
+  createOrder(conn, userId, totalAmount, shippingAddress, paymentMethod, bankName, cb) {
     const sql =
-      "INSERT INTO orders (user_id, total_amount, shipping_address) VALUES (?, ?, ?)";
-    conn.query(sql, [userId, totalAmount, shippingAddress], cb);
+      "INSERT INTO orders (user_id, total_amount, shipping_address, payment_method, bank_name) VALUES (?, ?, ?, ?, ?)";
+    conn.query(sql, [userId, totalAmount, shippingAddress, paymentMethod || null, bankName || null], cb);
   },
 
   insertOrderItems(conn, orderId, items, cb) {
