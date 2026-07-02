@@ -108,6 +108,7 @@ onMounted(fetchUsers)
 
 <template>
   <div class="admin-page">
+<<<<<<< HEAD
     <div class="admin-top">
       <div class="admin-tabs">
         <router-link to="/admin" class="admin-tab">Pesanan</router-link>
@@ -116,6 +117,8 @@ onMounted(fetchUsers)
         <router-link to="/admin/categories" class="admin-tab">Kategori</router-link>
       </div>
     </div>
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
 
     <!-- Header -->
     <div class="admin-header">
@@ -236,6 +239,7 @@ onMounted(fetchUsers)
 
 <style scoped>
 .admin-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
+<<<<<<< HEAD
 .admin-top { display: flex; align-items: center; margin-bottom: 16px; }
 .admin-tabs { display: flex; gap: 4px; background: var(--border-light); padding: 4px; border-radius: 10px; }
 .admin-tab {
@@ -244,6 +248,8 @@ onMounted(fetchUsers)
 }
 .admin-tab:hover { color: var(--text-secondary); }
 .admin-tab.active, .admin-tab.router-link-exact-active { background: #fff; color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
 
 .admin-header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
@@ -342,8 +348,11 @@ onMounted(fetchUsers)
 /* Mobile */
 @media (max-width: 768px) {
   .admin-page { padding: 16px 12px; }
+<<<<<<< HEAD
   .admin-tabs { overflow-x: auto; }
   .admin-tab { white-space: nowrap; font-size: 12px; padding: 6px 10px; }
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
   .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat-value { font-size: 18px; }
   .admin-header h1 { font-size: 18px; }

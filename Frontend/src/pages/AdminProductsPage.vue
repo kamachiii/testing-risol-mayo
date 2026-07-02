@@ -194,6 +194,7 @@ const fmtPrice = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
 
 <template>
   <div class="admin-page">
+<<<<<<< HEAD
     <div class="admin-top">
       <div class="admin-tabs">
         <router-link to="/admin" class="admin-tab">Pesanan</router-link>
@@ -202,6 +203,8 @@ const fmtPrice = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
         <router-link to="/admin/categories" class="admin-tab">Kategori</router-link>
       </div>
     </div>
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
     <div class="admin-header">
       <div>
         <h1>Produk</h1>
@@ -322,12 +325,15 @@ const fmtPrice = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
 
 <style scoped>
 .admin-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
+<<<<<<< HEAD
 .admin-top { display: flex; align-items: center; margin-bottom: 16px; }
 .admin-top h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); }
 .admin-tabs { display: flex; gap: 4px; background: var(--border-light); padding: 4px; border-radius: 10px; }
 .admin-tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; text-decoration: none; color: var(--text-muted); transition: all 0.15s; }
 .admin-tab.active, .admin-tab.router-link-exact-active { background: #fff; color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .admin-tab:hover { color: var(--text-secondary); }
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .admin-header h1 { font-size: 22px; font-weight: 700; }
 .header-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
@@ -411,7 +417,10 @@ const fmtPrice = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
 @media (max-width: 768px) {
   .admin-page { padding: 16px 12px; }
   .page-title { font-size: 20px; }
+<<<<<<< HEAD
   .admin-tabs { gap: 8px; }
+=======
+>>>>>>> 667c821 (Fix: remove redundant admin tab navigation (navbar handles it))
   .form-row { grid-template-columns: 1fr; gap: 12px; }
   .form-actions { flex-direction: column; }
   .form-actions button { width: 100%; }
