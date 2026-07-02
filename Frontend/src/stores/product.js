@@ -7,20 +7,21 @@ export const useProductStore = defineStore('products', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // Map category_id → name (sesuai database)
-  const categoryMap = {
-    1: 'Snack & Cemilan',
-    2: 'Minuman',
-    3: 'Makanan Instan',
-    4: 'Kebutuhan Dapur',
-    5: 'Perlengkapan Mandi',
-    6: 'Rokok',
-  }
-
+  const categories = ref([])
   const searchQuery = ref('')
   const currentPage = ref(1)
   const totalPages = ref(1)
   const totalItems = ref(0)
+
+  async function fetchCategories() {
+    try {
+      const { data } = await api.get('/categories')
+      categories.value = data.data || []
+    } catch (err) {
+      console.error('Gagal mengambil kategori:', err.message)
+      categories.value = []
+    }
+  }
 
   async function fetchProducts({ search, page, limit, sort, category_id } = {}) {
       loading.value = true
@@ -39,13 +40,12 @@ export const useProductStore = defineStore('products', () => {
         name: p.name,
         price: Number(p.price),
         category_id: p.category_id,
-        category: p.category_name || categoryMap[p.category_id] || 'Lainnya',
-        category_name: p.category_name || categoryMap[p.category_id] || 'Lainnya',
+        category: p.category_name || 'Lainnya',
+        category_name: p.category_name || 'Lainnya',
         description: p.description || '',
         image_url: p.image_url?.startsWith('http') ? p.image_url : `${p.image_url}`,
         stock: p.stock ?? 0,
       }))
-      // Pagination info from server
       if (data.pagination) {
         totalPages.value = data.pagination.totalPages
         totalItems.value = data.pagination.total
@@ -60,18 +60,13 @@ export const useProductStore = defineStore('products', () => {
     }
   }
 
-  const categories = Object.entries(categoryMap).map(([id, name]) => ({
-    id: Number(id),
-    name,
-  }))
-
   return {
     products,
     loading,
     error,
     fetchProducts,
+    fetchCategories,
     categories,
-    categoryMap,
     searchQuery,
     currentPage,
     totalPages,

@@ -70,6 +70,7 @@ watch(selectedCategory, () => {
 })
 
 onMounted(async () => {
+  await productStore.fetchCategories()
   if (route.query.search) {
     searchQuery.value = route.query.search
     await productStore.fetchProducts({ search: route.query.search, sort: sortBy.value })
